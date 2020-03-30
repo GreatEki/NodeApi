@@ -18,6 +18,6 @@ router
 router
 	.route('/:productID')
 	.get(getOneProduct)
-	.patch(checkAuth, updateProduct)
-	.delete(checkAuth, deleteProduct);
+	.patch(updateProduct)
+	.delete(deleteProduct);
 module.exports = router;

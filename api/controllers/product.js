@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 //DESC: This fetches all the products fron our database
 exports.getProducts = async (req, res, next) => {
 	try {
-		const products = await Product.find({}).select('name price _id');
+		const products = await Product.find({});
 		//The select() method helps is chose the properties of the records we want to return from our database
 		return res.status(200).json({
 			success: true,
@@ -19,7 +19,7 @@ exports.getProducts = async (req, res, next) => {
 					_id: prod._id,
 					request: {
 						type: 'GET',
-						url: `http:localhost:3000/api/products/${prod._id}`
+						url: `http:localhost:4000/api/products/${prod._id}`
 					}
 				};
 			})
@@ -38,15 +38,14 @@ exports.getProducts = async (req, res, next) => {
 //REQUEST TYPE: POST REQUEST
 //@URL: '/api/products/'
 //DESC: //This creates/saves a new Product in our database
-exports.saveProduct = async (req, res, next) => {
+exports.saveProduct = async (req, res) => {
 	try {
 		const product = new Product({
 			name: req.body.name,
 			price: req.body.price
 		});
 
-		const savedProduct = await product.save().select('name price _id');
-
+		const savedProduct = await product.save();
 		return res.status(201).json({
 			message: 'Handled POST request for /product',
 			createdProduct: savedProduct,
@@ -57,7 +56,8 @@ exports.saveProduct = async (req, res, next) => {
 		});
 	} catch (err) {
 		return res.status(500).json({
-			message: 'Server Error Occured'
+			message: 'Server Error Occured',
+			error: err.message
 		});
 	}
 };
@@ -67,7 +67,7 @@ exports.saveProduct = async (req, res, next) => {
 //This updates a product in our database
 exports.updateProduct = async (req, res, next) => {
 	try {
-		const id = req.params.productId;
+		const id = req.params.productID;
 		const updateOps = {};
 
 		for (const ops of req.body) {
@@ -82,7 +82,7 @@ exports.updateProduct = async (req, res, next) => {
 		); */
 
 		if (result) {
-			res.status(200).json({
+			res.status(204).json({
 				success: true,
 				message: 'Product Updated Successfully',
 				product: result.map(prod => {
@@ -92,7 +92,7 @@ exports.updateProduct = async (req, res, next) => {
 						_id: prod._id,
 						request: {
 							type: 'PATCH',
-							url: `http:localhost:3000/api/products/${res._id}`
+							url: `http:localhost:4000/api/products/${res._id}`
 						}
 					};
 				})
@@ -104,7 +104,8 @@ exports.updateProduct = async (req, res, next) => {
 		}
 	} catch (err) {
 		return res.status(500).json({
-			message: 'Server Error Occured'
+			message: 'Server Error Occured',
+			error: err.message
 		});
 	}
 };
@@ -114,25 +115,26 @@ exports.updateProduct = async (req, res, next) => {
 //DESC: This  fetched a particular product from our database
 exports.getOneProduct = async (req, res, next) => {
 	try {
-		const id = req.params.productId;
+		const id = req.params.productID;
 
-		const result = await Product.findById(id);
+		const result = await Product.findById({ _id: id });
 		if (result) {
 			return res.status(200).json({
 				success: true,
 				message: 'Product fetched successfuly',
-				product: result.map(prod => {
-					return {
-						name: prod.name,
-						price: prod.price,
-						request: {
-							type: 'GET',
-							url: `htttp:localhost:3000/api/products/${prod._id}`
-						}
-					};
-				})
+				product: {
+					_id: result._id,
+					name: result.name,
+					price: result.price
+				},
+				request: {
+					type: 'GET',
+					url: `htttp:localhost:4000/api/products/${result._id}`
+				}
 			});
-		} else {
+		}
+
+		if (!result) {
 			return res.status(404).json({
 				message: 'Product Not Found'
 			});
@@ -140,7 +142,7 @@ exports.getOneProduct = async (req, res, next) => {
 	} catch (err) {
 		return res.status(500).json({
 			message: 'Server error',
-			error: err
+			error: err.message
 		});
 	}
 };
@@ -148,14 +150,14 @@ exports.getOneProduct = async (req, res, next) => {
 //REQUEST TYPE: DELETE
 //@URL: '/api/products/:productId'
 //DESC: This deletes a product from our database
-exports.deleteProduct = async (req, res, next) => {
+exports.deleteProduct = async (req, res) => {
 	try {
-		const id = req.params.productId;
+		const id = req.params.productID;
 
 		const product = await Product.findById({ _id: id });
 
 		if (!product) {
-			res.status(404).json({
+			return res.status(404).json({
 				message: 'Product does not exist'
 			});
 		}
@@ -167,7 +169,7 @@ exports.deleteProduct = async (req, res, next) => {
 			message: 'Product Deleted Successfully',
 			request: {
 				type: 'DELETE',
-				url: 'http:localhost:3000/api/prodicts',
+				url: 'http:localhost:4000/api/products',
 				body: {
 					name: String,
 					price: Number
@@ -177,7 +179,7 @@ exports.deleteProduct = async (req, res, next) => {
 	} catch (err) {
 		res.status(500).json({
 			message: 'Server Error Occured',
-			error: err
+			error: err.message
 		});
 	}
 };
